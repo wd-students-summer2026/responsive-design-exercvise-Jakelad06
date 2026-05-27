@@ -1,4 +1,4 @@
-# Responsive Design
+# Responsive Design Exercise
 
 Welcome! In this assignment, you will incorporate CSS media queries into your existing web pages from the most recent version of your personal web site that you have built in previous assignments. This will allow your page layout to become **responsive**, meaning their layout, content, and/or styles change based on the size of the viewer's web browser in order to make the page well-designed and perfectly fit to whatever device the user is using at the moment.
 

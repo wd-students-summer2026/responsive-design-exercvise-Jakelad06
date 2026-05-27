@@ -1,244 +1,238 @@
 """
-Tests for responsive design assignment.
+Tests for the responsive design assignment.
 
-Selenium webdriver for Chrome (a.k.a. the file named chromedriver) must be installed in either:
-- in the same directory as chrome.exe on Windows (e.g. C:\Program Files\Google\Chrome\Application)
-- in a directory that is included in the PATH on Mac OS X (e.g. /usr/local/bin)
+Requires Selenium 4.6+ (uses Selenium Manager to auto-manage chromedriver)
+and a recent installation of Google Chrome.
 """
 
-import pytest
 import json
-from time import sleep
+import pytest
+from urllib.request import urlopen
 from selenium import webdriver
-from selenium.webdriver import ActionChains
-from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
+
+
+PAGES = ['index.html', 'about_me.html', 'more_about_me.html', 'topic_of_interest.html']
+
+# tolerance, in pixels, for "fits inside" assertions (browsers can off-by-1
+# rounding on sub-pixel layouts).
+PX_TOLERANCE = 2
+
+
+def _build_url(site_url, page=""):
+  base = site_url.rstrip("/")
+  if not page:
+    return base + "/"
+  return base + "/" + page.lstrip("/")
+
 
 class Tests:
 
   @pytest.fixture(scope="class")
   def settings(self):
-    settings = json.load(open('./settings.json', 'r'))
-    yield settings
+    with open('./settings.json', 'r') as f:
+      yield json.load(f)
 
   @pytest.fixture(scope="class")
-  def driver(self):
-    """
-    Pop open a web browser and make it available to the tests.
-    """
-    settings = json.load(open('./settings.json', 'r'))
-    print(settings["site_url"])
-
-    # set up the fixture
-    driver = webdriver.Chrome()
-    driver.get(settings["site_url"]) # load the site from the settings file
-    # provide the fixture value
-    yield driver  
-    # now tear it down
-    driver.close()
-
-  @pytest.fixture(scope='function')
-  def zoom(self, driver):
-    # zoom in by changing chrome's settings
-    driver.get('chrome://settings/') # load chrome's settings page
-    driver.execute_script('chrome.settingsPrivate.setDefaultZoom(1.5);')  # change zoom
-    # make the zoomed in driver available
+  def driver(self, settings):
+    options = Options()
+    options.add_argument("--window-size=1400,1000")
+    driver = webdriver.Chrome(options=options)
+    driver.get(_build_url(settings["site_url"]))
     yield driver
-    # return back to normal when done
-    driver.get('chrome://settings/') # load chrome's settings page
-    driver.execute_script('chrome.settingsPrivate.setDefaultZoom(1);') # change zoom    
+    driver.quit()
 
-  # responsive design requirements
-  def test_header_exists(self, driver, settings):
-    """
-    Check that header tag exists.
-    """
-    elem = driver.find_element_by_tag_name("header")
-    assert elem
+  # ------------------------------------------------------------------
+  # static structural requirements
+  # ------------------------------------------------------------------
 
-  def test_footer_exists(self, driver, settings):
-    """
-    Check that footer tag exists.
-    """
-    elem = driver.find_element_by_tag_name("footer")
-    assert elem, 'Footer element not found'
+  def test_header_exists(self, driver):
+    """A <header> element must exist on the home page."""
+    assert driver.find_element(By.TAG_NAME, "header")
+
+  def test_footer_exists(self, driver):
+    """A <footer> element must exist on the home page."""
+    assert driver.find_element(By.TAG_NAME, "footer"), 'Footer element not found'
 
   def test_columns_exist(self, driver, settings):
-    """
-    Check that elements exist with required column classes.
-    """
+    """Elements with each required column class must exist on the home page."""
     for selector in settings['responsive_column_selectors']:
-      elem = driver.find_elements_by_css_selector(selector)
-      assert elem, f'{selector} element not found'
+      elems = driver.find_elements(By.CSS_SELECTOR, selector)
+      assert elems, '{} element not found'.format(selector)
 
-  def test_mobile_width(self, settings, driver, zoom):
-    """
-    Check the width of elements with mobile css loaded.
-    """
-    # set the width to mobile-ish
+  def test_container_exists(self, driver):
+    """A .container element must exist (wrapping the page content)."""
+    elems = driver.find_elements(By.CSS_SELECTOR, ".container")
+    assert elems, "No element with class 'container' was found."
+
+  def test_viewport_meta(self, driver, settings):
+    """A <meta name='viewport'> must be present on every page."""
+    for page in PAGES:
+      driver.get(_build_url(settings["site_url"], page))
+      metas = driver.find_elements(By.CSS_SELECTOR, "meta[name='viewport']")
+      assert metas, "No <meta name='viewport'> on {}".format(page)
+
+  def test_three_media_query_stylesheets(self, settings):
+    """Each of mobile.css / tablet.css / desktop.css must be downloadable."""
+    for css in ('mobile.css', 'tablet.css', 'desktop.css'):
+      url = _build_url(settings["site_url"], "css/" + css)
+      try:
+        with urlopen(url, timeout=10) as resp:
+          assert resp.status == 200
+      except Exception as e:
+        raise AssertionError("Could not load {} : {}".format(url, e))
+
+  # ------------------------------------------------------------------
+  # responsive layout - mobile (<= 480)
+  # ------------------------------------------------------------------
+
+  def test_mobile_width(self, driver, settings):
+    """At 480px viewport, each main element must fit inside the container."""
     browser_width = 480
-    driver.set_window_size(browser_width, 800)
-    # ActionChains(driver).pause(1).perform() 
+    driver.set_window_size(browser_width, 900)
 
-    # activate the body
-    # elem = driver.find_element_by_tag_name('body')
-    # ActionChains(driver).move_to_element(elem).perform()  # activate the body
-
-    # the pages to test    
-    pages = ['index.html', 'about_me.html', 'more_about_me.html', 'topic_of_interest.html']
-
-    # test each page
-    for page in pages:
-      url = "{}/{}".format(settings["site_url"], page)
-      driver.get(url) # return to page of interest
+    for page in PAGES:
+      driver.get(_build_url(settings["site_url"], page))
 
       try:
-        container = driver.find_element_by_css_selector(".container")
-        header = driver.find_element_by_tag_name("header")
-        footer = driver.find_element_by_tag_name("footer")
-        column1 = driver.find_element_by_css_selector(".column1")
-        column2 = driver.find_element_by_css_selector(".column2")
-        column3 = driver.find_element_by_css_selector(".column3")
+        container = driver.find_element(By.CSS_SELECTOR, ".container")
+        header = driver.find_element(By.TAG_NAME, "header")
+        footer = driver.find_element(By.TAG_NAME, "footer")
+        column1 = driver.find_element(By.CSS_SELECTOR, ".column1")
+        column2 = driver.find_element(By.CSS_SELECTOR, ".column2")
+        column3 = driver.find_element(By.CSS_SELECTOR, ".column3")
       except Exception as e:
-        assert False, f'Error analyzing {page}: {e}'
+        assert False, 'Error analyzing {}: {}'.format(page, e)
 
-      # determine margin and padding on container
-      # pl = int(container.value_of_css_property('padding-left')[:-2])
-      # pr = int(container.value_of_css_property('padding-right')[:-2])
-      # ml = int(container.value_of_css_property('margin-left')[:-2])
-      # mr = int(container.value_of_css_property('margin-right')[:-2])
-      # available_width = container.size['width'] - pl - pr - ml - mr
+      cw = container.size["width"]
+      assert cw <= browser_width + PX_TOLERANCE, (
+        'Container width on mobile is wider than the browser viewport on {}.'.format(page)
+      )
+      assert header.size["width"] <= cw + PX_TOLERANCE, (
+        'Header wider than container on mobile, page {}.'.format(page)
+      )
+      assert footer.size["width"] <= cw + PX_TOLERANCE, (
+        'Footer wider than container on mobile, page {}.'.format(page)
+      )
+      for c, name in ((column1, "1"), (column2, "2"), (column3, "3")):
+        assert c.size["width"] <= cw + PX_TOLERANCE, (
+          'Column {} wider than container on mobile, page {}.'.format(name, page)
+        )
 
-      # check widths are appropriate
-      assert container.size["width"] <= browser_width, f'Container width on mobile is wider than the browser viewport on {page}.'
-      assert header.size["width"] <= container.size["width"], f'Header width on mobile is wider than the container on {page}.'
-      assert footer.size["width"] <= container.size["width"], f'Footer width on mobile is wider than the container on {page}.'
-      assert column1.size["width"] <= container.size["width"], f'Column 1 width on mobile is wider than the container on {page}.'
-      assert column2.size["width"] <= container.size["width"], f'Column 2 width on mobile is wider than the container on {page}.'
-      assert column3.size["width"] <= container.size["width"], f'Column 3 width on mobile is wider than the container on {page}.'
+      # All three columns must stack one on top of the other.
+      tops = sorted([column1.location['y'],
+                     column2.location['y'],
+                     column3.location['y']])
+      assert tops[0] != tops[1] or tops[1] != tops[2], (
+        'Columns are not stacked on mobile on {} - at least two share '
+        'the same y-coordinate.'.format(page)
+      )
 
-      # check floats are appropriate
-      # assert container.value_of_css_property('float') == 'none'
-      # assert column1.value_of_css_property('float') == 'none'
-      # assert column2.value_of_css_property('float') == 'none'
-      # assert column3.value_of_css_property('float') == 'none'
+  # ------------------------------------------------------------------
+  # responsive layout - tablet (481-960)
+  # ------------------------------------------------------------------
 
-  def test_tablet_width(self, settings, driver):
+  def test_tablet_width(self, driver, settings):
     """
-    Check the width of elements with tablet css loaded.
+    At tablet widths the first two columns must sit side-by-side and the
+    third column must be on its own row below them.
     """
-    # set the width to tablet-ish
-    browser_widths = [481, 960]  # min and max tablet widths
-    last_container_width = -1 # keep track of the width we detect
-    # try out both min and max widths
+    browser_widths = [481, 960]
     for browser_width in browser_widths:
-      # set the browser width
-      driver.set_window_size(browser_width, 800)
+      driver.set_window_size(browser_width, 900)
 
-      # the pages to test    
-      pages = ['index.html', 'about_me.html', 'more_about_me.html', 'topic_of_interest.html']
-
-      # test each page
-      for page in pages:
-        url = "{}/{}".format(settings["site_url"], page)
-        driver.get(url) # return to page of interest
+      for page in PAGES:
+        driver.get(_build_url(settings["site_url"], page))
 
         try:
-          container = driver.find_element_by_css_selector(".container")
-          header = driver.find_element_by_tag_name("header")
-          footer = driver.find_element_by_tag_name("footer")
-          column1 = driver.find_element_by_css_selector(".column1")
-          column2 = driver.find_element_by_css_selector(".column2")
-          column3 = driver.find_element_by_css_selector(".column3")
+          container = driver.find_element(By.CSS_SELECTOR, ".container")
+          header = driver.find_element(By.TAG_NAME, "header")
+          footer = driver.find_element(By.TAG_NAME, "footer")
+          column1 = driver.find_element(By.CSS_SELECTOR, ".column1")
+          column2 = driver.find_element(By.CSS_SELECTOR, ".column2")
+          column3 = driver.find_element(By.CSS_SELECTOR, ".column3")
         except Exception as e:
-          assert False, f'Error analyzing {page}: {e}'
+          assert False, 'Error analyzing {}: {}'.format(page, e)
 
-        # determine margin and padding on container
-        # pl = int(container.value_of_css_property('padding-left')[:-2])
-        # pr = int(container.value_of_css_property('padding-right')[:-2])
-        # ml = int(container.value_of_css_property('margin-left')[:-2])
-        # mr = int(container.value_of_css_property('margin-right')[:-2])
-        # available_width = container.size['width'] - pl - pr - ml - mr
+        cw = container.size["width"]
+        assert cw <= browser_width + PX_TOLERANCE, (
+          'Container wider than viewport at {}px on {}.'.format(browser_width, page)
+        )
+        assert header.size["width"] <= cw + PX_TOLERANCE
+        assert footer.size["width"] <= cw + PX_TOLERANCE
+        for c in (column1, column2, column3):
+          assert c.size["width"] <= cw + PX_TOLERANCE
 
-        # check widths are appropriate
-        assert container.size["width"] <= browser_width, f'Container width on tablet is wider than the browser viewport on {page}.'
-        assert header.size["width"] <= container.size["width"], f'Header width on tablet is wider than the container on {page}.'
-        assert footer.size["width"] <= container.size["width"], f'Footer width on tablet is wider than the container on {page}.'
-        assert column1.size["width"] <= container.size["width"], f'Column 1 width on tablet is wider than the container on {page}.'
-        assert column2.size["width"] <= container.size["width"], f'Column 2 width on tablet is wider than the container on {page}.'
-        assert column3.size["width"] <= container.size["width"], f'Column 3 width on tablet is wider than the container on {page}.'
+        # The first two columns must fit side-by-side.
+        assert (
+          column1.size['width'] + column2.size['width'] <= cw + PX_TOLERANCE
+        ), 'column1 + column2 do not fit in one container row on {}.'.format(page)
 
-        # check that the columns fit in one row
-        assert column1.size['width'] + column2.size['width'] <= container.size["width"]
+        # column3 must be on a row BELOW column1.
+        assert (
+          column3.location['y'] >= column1.location['y'] + column1.size['height']
+          - PX_TOLERANCE
+        ), 'column3 is not below column1 at tablet width on {}.'.format(page)
 
-        # remember the size of the container
-        if last_container_width >= 0:
-          assert container.size['width'] == last_container_width, 'Container width on tablet is not consistent.'
-        else:
-          last_container_width = container.size['width']
+  # ------------------------------------------------------------------
+  # responsive layout - desktop (>= 961)
+  # ------------------------------------------------------------------
 
-        # check floats are appropriate
-        # assert container.value_of_css_property('float') == 'none'
-        # assert column1.value_of_css_property('float') == 'left'
-        # assert column2.value_of_css_property('float') == 'left'
-        # assert column3.value_of_css_property('float') == 'left'
-
-  def test_desktop_width(self, settings, driver):
-    """
-    Check the width of elements with desktop css loaded.
-    """
-    # set the width to desktop-ish
-    # try out a few different sizes
+  def test_desktop_width(self, driver, settings):
+    """At desktop widths all three columns must share a single row."""
     browser_widths = [961, 1400]
-    last_container_width = -1 # keep track of the width we detect
-    # try out both min and max widths
     for browser_width in browser_widths:
-      # set the browser width
-      driver.set_window_size(browser_width, 800)
+      driver.set_window_size(browser_width, 900)
 
-      # the pages to test    
-      pages = ['index.html', 'about_me.html', 'more_about_me.html', 'topic_of_interest.html']
-
-      # test each page
-      for page in pages:
-        url = "{}/{}".format(settings["site_url"], page)
-        driver.get(url) # return to page of interest
+      for page in PAGES:
+        driver.get(_build_url(settings["site_url"], page))
 
         try:
-          container = driver.find_element_by_css_selector(".container")
-          header = driver.find_element_by_tag_name("header")
-          footer = driver.find_element_by_tag_name("footer")
-          column1 = driver.find_element_by_css_selector(".column1")
-          column2 = driver.find_element_by_css_selector(".column2")
-          column3 = driver.find_element_by_css_selector(".column3")
+          container = driver.find_element(By.CSS_SELECTOR, ".container")
+          header = driver.find_element(By.TAG_NAME, "header")
+          footer = driver.find_element(By.TAG_NAME, "footer")
+          column1 = driver.find_element(By.CSS_SELECTOR, ".column1")
+          column2 = driver.find_element(By.CSS_SELECTOR, ".column2")
+          column3 = driver.find_element(By.CSS_SELECTOR, ".column3")
         except Exception as e:
-          assert False, f'Error analyzing {page}: {e}'
+          assert False, 'Error analyzing {}: {}'.format(page, e)
 
-        # determine margin and padding on container
-        # pl = int(container.value_of_css_property('padding-left')[:-2])
-        # pr = int(container.value_of_css_property('padding-right')[:-2])
-        # ml = int(container.value_of_css_property('margin-left')[:-2])
-        # mr = int(container.value_of_css_property('margin-right')[:-2])
-        # available_width = container.size['width'] - pl - pr - ml - mr
+        cw = container.size["width"]
+        assert cw <= browser_width + PX_TOLERANCE, (
+          'Container wider than viewport at {}px on {}.'.format(browser_width, page)
+        )
+        assert header.size["width"] <= cw + PX_TOLERANCE
+        assert footer.size["width"] <= cw + PX_TOLERANCE
+        for c in (column1, column2, column3):
+          assert c.size["width"] <= cw + PX_TOLERANCE
 
-        # check widths are appropriate
-        assert container.size["width"] <= browser_width, f'Container width on desktop is wider than the browser viewport on {page}.'
-        assert header.size["width"] <= container.size["width"], f'Header width on desktop is wider than the container on {page}.'
-        assert footer.size["width"] <= container.size["width"], f'Footer width on desktop is wider than the container on {page}.'
-        assert column1.size["width"] <= container.size["width"], f'Column 1 width on desktop is wider than the container on {page}.'
-        assert column2.size["width"] <= container.size["width"], f'Column 2 width on desktop is wider than the container on {page}.'
-        assert column3.size["width"] <= container.size["width"], f'Column 3 width on desktop is wider than the container on {page}.'
-        
-        # check that the columns fit in one row
-        assert column1.size['width'] + column2.size['width'] + column3.size['width'] <= container.size["width"], 'Columns do not fit in one row on desktop.'
+        total_col_w = (
+          column1.size['width'] + column2.size['width'] + column3.size['width']
+        )
+        assert total_col_w <= cw + PX_TOLERANCE, (
+          'The three columns do not fit in one row on desktop on {}.'.format(page)
+        )
 
-        # remember the size of the container
-        if last_container_width >= 0:
-          assert container.size['width'] == last_container_width, f'Container width on desktop is not consistent on {page}.'
-        else:
-          last_container_width = container.size['width']
+        # All three columns must share the same top y-coordinate (single row).
+        tops = [column1.location['y'],
+                column2.location['y'],
+                column3.location['y']]
+        assert max(tops) - min(tops) <= PX_TOLERANCE, (
+          'Columns are not on the same row on desktop on {} (y-tops: {}).'
+          .format(page, tops)
+        )
 
-        # check floats are appropriate
-        # assert container.value_of_css_property('float') == 'none'
-        # assert column1.value_of_css_property('float') == 'left'
-        # assert column2.value_of_css_property('float') == 'left'
-        # assert column3.value_of_css_property('float') == 'left'
+  def test_container_centered_on_desktop(self, driver, settings):
+    """The .container should be horizontally centered at desktop widths."""
+    driver.set_window_size(1400, 900)
+    driver.get(_build_url(settings["site_url"]))
+    container = driver.find_element(By.CSS_SELECTOR, ".container")
+    body_width = driver.execute_script("return document.body.clientWidth")
+    left = container.location['x']
+    right = body_width - (container.location['x'] + container.size['width'])
+    # Allow some asymmetry but it should be approximately centered.
+    assert abs(left - right) <= 40, (
+      'The .container is not approximately centered on desktop '
+      '(left margin {}, right margin {}).'.format(left, right)
+    )
