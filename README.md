@@ -1,75 +1,79 @@
-# Responsive Design Exercise
+# User Experience Design Exercise
 
-Welcome! In this assignment, you will incorporate CSS media queries into your existing web pages from the most recent version of your personal web site that you have built in previous assignments. This will allow your page layout to become **responsive**, meaning their layout, content, and/or styles change based on the size of the viewer's web browser in order to make the page well-designed and perfectly fit to whatever device the user is using at the moment.
+Welcome! In this assignment, you will work on designing the user experience of an imaginary web site consisting of no less than 5 pages. In particular, you will...
+
+- draft wireframe diagrams that are the equivalent of a blueprint to be used when designers and engineers design and develop the site, respectively.
+- draft a site map that shows the grouping and hierarchy of the various sections of the site
+- create a clickable prototype of the site, so stakeholders who want to understand your plans can get a visceral sense of what it will feel like to use the site as you have designed it.
+
+You will add a new page to your personal web site that shows the wireframe diagrams you have drafted and links to the clickable prototype you have created.
 
 ## Requirements
 
-Some rules about responsive behaviors for all existing HTML pages.
+Some rules about the minimum work required to complete this assignment.
 
-On top of these requirements, you are welcome to add any additional responsive design features that you believe will make this page as accessible and amenabale to users as posssible.
+On top of these requirements, you are welcome to add any additional work that you believe will make your plans for this site compelling and stimulating to someone finding it on the web.
 
-### Copy existing web site files
+### Wireframes
 
-The work you do in this assignment will be published to the same directory where your current web site currently exists. To prevent you from accidentally deleting any of your existing web site files, copy all the files from your existing web site into the main project directory for this assignment. This means copying any existing HTML, CSS, images, and other files and directories so a copy exists within this project directory. Then we will be able to upload everything in this directory to the web server and replace all existing files without worry about losing anything.
+Use [Figma's Design tool](https://www.figma.com/design/) to draft **mobile wireframes** for the **mobile version** your imaginary site.
 
-### Create three new CSS files
+- create one wireframe for each distinct page of the site
+- if there are interactive behaviors you are proposing for the site, such as content that appears dynamically on a page when the user hovers or clicks on something, be sure to create a version of the wireframess for those pages without the dynamic content displayed, and another version with the dynamic content displayed.
+- the exact width of the wireframes is not important, but make sure every wireframe has the same width and looks suitable laid out for mobile devices.
 
-You will need to create three new CSS files within the `css` directory:
+[Export](https://help.figma.com/hc/en-us/articles/360040028114-Export-from-Figma-Design) each wireframe diagram as a `.png` file - you will post these to your personal web site later.
 
-- `mobile.css` - styles that will apply to browser widths of **480px or less**
-- `tablet.css` - styles that will apply to browser widths between **481px and 960px, inclusive**
-- `desktop.css` - styles that will apply to browser widths of **961px or greater**
+### Site map
 
-### Add media queries to all existing HTML pages
+Use [Figma's FigJam tool](https://www.figma.com/figjam/) to create a simple site map of your imaginary web site.
 
-In order to make all pages of your site responsive, place the following three link tags and meta tag inside the head section of each of your HTML documents. You will notice that these link tags include **media queries**, which indicate at which widths these each of the stylesheet files will be loaded by the browser.
+Export the site map diagram as a `.png` file - you will post it to your personal web site later.
 
-```html
-<!-- Media query for narrow browser width -->
-<link
-  rel="stylesheet"
-  media="only screen and (max-width: 480px)"
-  href="css/mobile.css"
-/>
+### Clickable prototype
 
-<!-- Media query for medium browser width -->
-<link
-  rel="stylesheet"
-  media="only screen and (min-width: 481px) and (max-width: 960px)"
-  href="css/tablet.css"
-/>
+Use [Figma's Prototype feature](https://www.figma.com/prototyping/) with its Design tool to create a clickable **mobile** prototype.
 
-<!-- Media query for full browser width -->
-<link
-  rel="stylesheet"
-  media="only screen and (min-width: 961px)"
-  href="css/desktop.css"
-/>
+When creating a clickable prototype, meet the following minimal requirements:
 
-<!-- Prevent smartphones from scaling the page by default -->
-<meta name="viewport" content="initial-scale=1" />
-```
+- upload the `.png` images of your wireframes to an InvisionApp project
+- set hotspots on each wireframe such that a viewer can click on the wireframes to see an approximation of how the real web site will function.
+- everything that you are intending to be clickable on the final site should be clickable on the prototype.
+- all buttons, links or other user interface components that allow a user to navigate from one screen to another must be functional in the prototype
+- create as many variations of your existing wireframe diagrams as you need in order to make the prototype look "believable"; give a real sense of how the application flow might work... don't take shortcuts.
+- your prototypes must be designed to clearly show the way in which a user navigates from one screen to another, as well as how they solve the core use cases and needs your web site is designed to solve.
 
-As the comments indicate, these media queries assess a viewer's browser width and use that information to determine which of three style sheets to use for the page: `mobile.css`, `tablet.css`, or `desktop.css`.
+Copy a link to your prototype. You will publish this link later to your personal web site.
 
-## Create responsive layout
+### Update your personal web site
 
-Now that your web pages have the flexibility to access different style sheets at different browser widths, the next step is to optimize the layout with CSS for each of the widths specified.
+Create a new HTML document named `user_experience_design.html`. This page will display each of the wireframe diagrams, the site map, and a link to the clickable prototype of your imaginary site.
 
-Your task is the following:
+## Before updating, copy your current site
 
-- use a **container div** around all content of all pages - this must be given the class, `container` and must be used to center the page.
-- create a `header` and `footer` that is repeated on all pages - these must have a consistent style across all pages and should be the full width of the container.
-- create a **fixed width three-column layout for desktop** widths - the columns must sit side-by-side and each column must be one-third of the container width.
-- create a **fixed width two-column layout for tablet** widths - the first two columns will sit side-by-side and each be half the container width, and the third column must be full width below those first two.
-- create a **one-column scaling layout for smartphone** widths - all the elements that were side-by-side in the desktop and tablet layouts must now be stacked one on top of the other. The widths of each must be the full container width.
-- _the width of the site pages must never be wider than the browser's width_.
+Before updating your personal site, copy all files from your existing personal web site, **except the `README.md` and `settings.json` files**, into this new project directory. This way, you will have a complete set of files for your web site in this new project directory and will not have to worry about accidentally deleting anything when you publish your updated web site later on.
 
-Make sure to...
+#### Page heading
 
-- add the class `column1` to any responsive elements that make up the left-most column at desktop width
-- add the class `column2` to the responsive elements that make up the middle column at desktop width
-- add the class `column3` to the responsive elements that make up the right-most column at desktop width
+This page must have the general heading, `<h1>User Experience Design</h1>`.
+
+#### Prototype section
+
+Create a `<section class="prototype">` element with an `<h2>` heading that says, "`Clickable Prototype`".
+
+- use an `<a>` element to take visitors to your clickable prototype on InvisionApp when the link is clicked.
+
+#### Wireframe section
+
+Create a `<section class="wireframes">` element with an `<h2>` heading that says, "`Wireframes`".
+
+- use `<img>` elements to publish each of your imaginary site's wireframe diagrams to this page. Style them so that they fit comfortably onto the page yet are eassy to view when viewed on a typical desktop web browser.
+
+#### Site Map section
+
+Create a `<section class="site_map">` element with an `<h2>` heading that says, "`Site Map`".
+
+- use an `<img>` element to publish your imaginary site's site map diagram to this page. Style it so that it fits comfortably onto the page yet is eassy to view when viewed on a typical desktop web browser.
 
 ## Submit your work
 
@@ -83,10 +87,7 @@ Take note of the web address (URL) of your web page - this is the address that c
 
 ### Update the settings.json file
 
-Make sure your name, NYU Net ID, and the exact URL of your web site's home page are placed into the `settings.json` file in the appropriate places. Make sure the URL works when plugged into a web browser beforehand.
-
-**Additional settings**
-Additionally, you **must** include the CSS-style selectors for the three responsive column classes in the `settings.json` file. These have been entered for you in this file, and you do not need to adjust them unless you change the class names for some reason,
+In the file named `settings.json`, update your name, Net ID, and URL of your personal site. Also add the URL of your clickable prototype into the appropriate field.
 
 ### Submit your work on GitHub
 

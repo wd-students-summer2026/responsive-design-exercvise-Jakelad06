@@ -1,0 +1,76 @@
+/* tablet.css — applies between 481px and 960px */
+
+/* Container: centered, fixed at tablet width */
+.container {
+  width: 90%;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+header,
+h1:first-child {
+  width: 100%;
+  padding: 20px 0;
+  font-size: 1.6rem;
+}
+
+footer {
+  width: 100%;
+  padding: 20px 0;
+  font-size: 0.9rem;
+  text-align: center;
+  clear: both;
+}
+
+.nav-bar {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.column1,
+.column2 {
+  width: 50%;
+  float: left;
+  box-sizing: border-box;
+  padding-right: 16px;
+  margin-bottom: 16px;
+}
+
+.column2 {
+  padding-right: 0;
+  padding-left: 16px;
+}
+
+.column3 {
+  width: 100%;
+  float: none;
+  clear: both;
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+
+section {
+  box-sizing: border-box;
+  margin-bottom: 16px;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+ol, ul {
+  padding-left: 24px;
+}
+
+.container::after {
+  content: "";
+  display: table;
+  clear: both;
+}
